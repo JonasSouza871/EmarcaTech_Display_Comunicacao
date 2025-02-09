@@ -145,6 +145,6 @@ Botões -> Interrupção -> funcao_botoes() -> (LEDs, Flag Atualização OLED) -
 https://drive.google.com/file/d/1jLlywsPfsaQGPA3ScVXdscfacoK8yuE4/view?usp=sharing
 
 ## 📞 Contato:
-👤 Autor: Jonas Souza Pinto
+👤 Autor: Jonas Souza
 
 📧 E-mail: jonassouza871@hotmail.com
