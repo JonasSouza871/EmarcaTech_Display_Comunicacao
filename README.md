@@ -135,13 +135,14 @@ Botões -> Interrupção -> funcao_botoes() -> (LEDs, Flag Atualização OLED) -
 ---
 
 
-## 🗺️ Esquemático (Adicione seu esquema aqui)
+## 🗺️ Esquemático 
 
----
+![image](https://github.com/user-attachments/assets/187a30f6-b78c-4981-9f39-cc585e8f1a69)
+
 
 ## 🎬 Vídeo de Funcionamento:
 
-## 📞 Contato (Adicione suas informações de contato):
+## 📞 Contato:
 👤 Autor: Jonas Souza Pinto
 
 📧 E-mail: jonassouza871@hotmail.com
