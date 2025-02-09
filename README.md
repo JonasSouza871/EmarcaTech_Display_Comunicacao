@@ -76,6 +76,7 @@ A pinagem é configurável no código-fonte, mas a configuração padrão é:
 
 ## 📁 Estrutura do Projeto
 - O projeto está organizado da seguinte forma:
+
 .
 ├── .vscode/             # Configurações do VS Code (se aplicável)
 ├── build/               # Diretório para os arquivos compilados
@@ -91,6 +92,7 @@ A pinagem é configurável no código-fonte, mas a configuração padrão é:
 ├── pico_sdk_import.cmake # Script para importar o Pico SDK
 ├── ws2812.pio          # Programa PIO para o WS2812
 └── README.md            # Este arquivo
+
 
 ## 🚀 Funcionamento Detalhado
 
