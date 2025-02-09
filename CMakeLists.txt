@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.13)
 
+# Configurações básicas
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Inicializa o pico_sdk a partir da localização instalada
+# Configuração do SDK
 if(WIN32)
     set(USERHOME $ENV{USERPROFILE})
 else()
@@ -18,42 +19,34 @@ if (EXISTS ${picoVscode})
     include(${picoVscode})
 endif()
 
-set(PICO_BOARD pico CACHE STRING "Board type")
-
-# Inclui o SDK do Raspberry Pi Pico (deve ser incluído antes do projeto)
+set(PICO_BOARD pico_w CACHE STRING "Board type")
 include(pico_sdk_import.cmake)
 
-project(DisplayC C CXX ASM)
-
-# Inicializa o SDK do Raspberry Pi Pico
+project(ws2812 C CXX ASM)
 pico_sdk_init()
 
-# Adiciona o executável com o novo arquivo main.c (além do ssd1306.c)
-add_executable(DisplayC 
-    main.c 
+# Adiciona os arquivos fontes
+add_executable(ws2812
+    main.c
     Display_Bibliotecas/ssd1306.c
+    matriz_led.c
+    numeros.c
 )
 
-pico_set_program_name(DisplayC "DisplayC")
-pico_set_program_version(DisplayC "0.1")
+# Configuração da comunicação serial
+pico_enable_stdio_uart(ws2812 1) 
+pico_enable_stdio_usb(ws2812 1)  # Ativa USB
 
-# Configura saída via UART/USB (ajuste conforme necessário)
-pico_enable_stdio_uart(DisplayC 0)
-pico_enable_stdio_usb(DisplayC 1)
+# Gera o cabeçalho PIO
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/generated)
+pico_generate_pio_header(ws2812 ${CMAKE_CURRENT_LIST_DIR}/ws2812.pio
+    OUTPUT_DIR ${CMAKE_CURRENT_LIST_DIR}/generated)
 
-# Adiciona a biblioteca padrão ao compilado
-target_link_libraries(DisplayC
+# Vincula as bibliotecas
+target_link_libraries(ws2812 PRIVATE
     pico_stdlib
-)
-
-# Adiciona os diretórios de inclusão padrão
-target_include_directories(DisplayC PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}
-)
-
-# Adiciona as bibliotecas de usuário (neste caso, hardware_i2c)
-target_link_libraries(DisplayC 
     hardware_i2c
+    hardware_pio
 )
 
-pico_add_extra_outputs(DisplayC)
+pico_add_extra_outputs(ws2812)
