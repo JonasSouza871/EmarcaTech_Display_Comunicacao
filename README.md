@@ -77,22 +77,22 @@ A pinagem é configurável no código-fonte, mas a configuração padrão é:
 ## 📁 Estrutura do Projeto
 - O projeto está organizado da seguinte forma:
 
-.
+``` 
 ├── .vscode/             # Configurações do VS Code (se aplicável)
 ├── build/               # Diretório para os arquivos compilados
 ├── CMakeLists.txt       # Arquivo de configuração do CMake
-├── main.c              # Arquivo principal do programa
+├── main.c               # Arquivo principal do programa
 ├── Display_Bibliotecas/ # Biblioteca para o display OLED
 │   ├── ssd1306.c
 │   └── ssd1306.h
-├── matriz_led.c        # Código para controlar a matriz de LED
-├── matriz_led.h        # Header da biblioteca da matriz de LED
-├── numeros.c           # Padrões numéricos para a matriz de LED
-├── numeros.h           # Header para os padrões numéricos
+├── matriz_led.c         # Código para controlar a matriz de LED
+├── matriz_led.h         # Header da biblioteca da matriz de LED
+├── numeros.c            # Padrões numéricos para a matriz de LED
+├── numeros.h            # Header para os padrões numéricos
 ├── pico_sdk_import.cmake # Script para importar o Pico SDK
-├── ws2812.pio          # Programa PIO para o WS2812
-└── README.md            # Este arquivo
-
+├── ws2812.pio           # Programa PIO para o WS2812
+└── README.md            # Documentação do projeto
+``` 
 
 ## 🚀 Funcionamento Detalhado
 
