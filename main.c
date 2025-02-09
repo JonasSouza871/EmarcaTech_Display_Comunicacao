@@ -8,137 +8,124 @@
 #include "matriz_led.h"
 #include "numeros.h"
 
-// Definições para I2C e display SSD1306
-#define I2C_PORT i2c1
-#define I2C_SDA 14
-#define I2C_SCL 15
-#define OLED_ADDR 0x3C
+#define PORTA_I2C i2c1
+#define PINO_SDA 14 //Declaração do pino SDA
+#define PINO_SCL 15 //Declaração pino SCL
+#define ENDERECO_DISPLAY 0x3C //Endereço I2C
+#define PINO_BOTAO_A 5 //Pino do botao A
+#define PINO_BOTAO_B 6 //Pino do botao B
+#define PINO_LED_VERDE 11 // Pino do led verde
+#define PINO_LED_AZUL 12 // pino do led azul
+#define TEMPO_ESPERA_BOTAO 200 //Debounce em 200 ms
 
-// Definições dos pinos para os botões e LEDs
-#define BOTAO_A_PIN 5   // Botão A no GPIO 5
-#define BOTAO_B_PIN 6   // Botão B no GPIO 6
-#define LED_VERDE_PIN 11 // LED Verde no GPIO 11
-#define LED_AZUL_PIN 12  // LED Azul no GPIO 12
+// Variáveis marcadas como volatile porque são modificadas em interrupções
+// O volatile avisa o compilador que estas variáveis podem mudar a qualquer momento
+volatile bool estado_led_verde = false;    // Estado do LED verde (ligado/desligado)
+volatile bool estado_led_azul = false;     // Estado do LED azul (ligado/desligado)
+volatile uint32_t ultima_vez_botao_a = 0;  // Último momento que o botão A foi pressionado
+volatile uint32_t ultima_vez_botao_b = 0;  // Último momento que o botão B foi pressionado
+volatile bool atualizar_display = false;    // Flag para indicar necessidade de atualizar o display
 
-// Tempo de debouncing em milissegundos
-#define DEBOUNCE_DELAY 200
-
-// Variáveis globais
-volatile bool led_green_state = false;    // Estado do LED verde
-volatile bool led_blue_state = false;       // Estado do LED azul
-volatile uint32_t last_button_a_time = 0;   // Última vez que o botão A foi acionado
-volatile uint32_t last_button_b_time = 0;   // Última vez que o botão B foi acionado
-volatile bool flag_display_update = false;  // Flag para atualizar o display
-
-// Função para atualizar a matriz de LEDs WS2812
-void update_ws2812_matrix(char digit) {
-    uint8_t num = digit - '0';
-    mostrar_numero(num);
+void atualizar_matriz_led(char digito) { //Função para atualizar o valor do numero na matriz de led.
+    uint8_t numero = digito - '0';
+    mostrar_numero(numero);
 }
 
-// Função de callback global para as interrupções dos botões
-void gpio_callback(uint gpio, uint32_t events) {
-    uint32_t now = to_ms_since_boot(get_absolute_time());
+void funcao_botoes(uint pino, uint32_t eventos) { //Funçoes para contro do estado do botao
+    uint32_t tempo_atual = to_ms_since_boot(get_absolute_time()); 
     
-    if (gpio == BOTAO_A_PIN) {
-        if ((now - last_button_a_time) < DEBOUNCE_DELAY)
+    if (pino == PINO_BOTAO_A) {
+        if ((tempo_atual - ultima_vez_botao_a) < TEMPO_ESPERA_BOTAO)
             return;
-        last_button_a_time = now;
-        led_green_state = !led_green_state;
-        gpio_put(LED_VERDE_PIN, led_green_state);
-        printf("LED Verde: %s\n", led_green_state ? "LIGADO" : "DESLIGADO");
-        flag_display_update = true;
+        
+        ultima_vez_botao_a = tempo_atual;
+        estado_led_verde = !estado_led_verde;
+        gpio_put(PINO_LED_VERDE, estado_led_verde);
+        printf("LED Verde: %s\n", estado_led_verde ? "LIGADO" : "DESLIGADO");
+        atualizar_display = true;
     }
-    else if (gpio == BOTAO_B_PIN) {
-        if ((now - last_button_b_time) < DEBOUNCE_DELAY)
+    else if (pino == PINO_BOTAO_B) {
+        if ((tempo_atual - ultima_vez_botao_b) < TEMPO_ESPERA_BOTAO)
             return;
-        last_button_b_time = now;
-        led_blue_state = !led_blue_state;
-        gpio_put(LED_AZUL_PIN, led_blue_state);
-        printf("LED Azul: %s\n", led_blue_state ? "LIGADO" : "DESLIGADO");
-        flag_display_update = true;
+        ultima_vez_botao_b = tempo_atual;
+        estado_led_azul = !estado_led_azul;
+        gpio_put(PINO_LED_AZUL, estado_led_azul);
+        printf("LED Azul: %s\n", estado_led_azul ? "LIGADO" : "DESLIGADO");
+        atualizar_display = true;
     }
 }
 
 int main(void) {
-    stdio_init_all();
+    stdio_init_all(); //Inicia comunicação seria
     sleep_ms(100);
-
-    // Configuração do I2C e do display SSD1306
-    i2c_init(I2C_PORT, 400000);
-    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
-    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
-    gpio_pull_up(I2C_SDA);
-    gpio_pull_up(I2C_SCL);
-
+    i2c_init(PORTA_I2C, 400000); //Inicia display 128x64
+    gpio_set_function(PINO_SDA, GPIO_FUNC_I2C); //Seta função sda
+    gpio_set_function(PINO_SCL, GPIO_FUNC_I2C); // seta função scl
+    gpio_pull_up(PINO_SDA); //Pino sda como pull_up
+    gpio_pull_up(PINO_SCL); // Pino SCL como pull_up
     ssd1306_t display;
-    ssd1306_init(&display, 128, 64, false, OLED_ADDR, I2C_PORT);
-    ssd1306_config(&display);
+    ssd1306_init(&display, 128, 64, false, ENDERECO_DISPLAY, PORTA_I2C); //Inicia portas do display
+    ssd1306_config(&display); //configura display
+    inicializar_matriz_led(); //Função da bibliotecatecla matriz de led para inciializar a patra
+    gpio_init(PINO_BOTAO_A); //Inicia botao A
+    gpio_set_dir(PINO_BOTAO_A, GPIO_IN); // Seta botao A como entrada de dados
+    gpio_pull_up(PINO_BOTAO_A); // Define botao A como pull up
+    gpio_init(PINO_BOTAO_B); // Inicia botao B
+    gpio_set_dir(PINO_BOTAO_B, GPIO_IN); // Seta botao B como entrada de dados
+    gpio_pull_up(PINO_BOTAO_B); // Define botao B como pull_up
+    gpio_set_irq_enabled_with_callback(PINO_BOTAO_A, GPIO_IRQ_EDGE_FALL, true, funcao_botoes); // Aplicação da interrupção no Botao A
+    gpio_set_irq_enabled(PINO_BOTAO_B, GPIO_IRQ_EDGE_FALL, true); //Aplicação da interrupção no botao B
 
-    // Inicializa a matriz WS2812
-    inicializar_matriz_led();
-
-    // Configuração do Botão A
-    gpio_init(BOTAO_A_PIN);
-    gpio_set_dir(BOTAO_A_PIN, GPIO_IN);
-    gpio_pull_up(BOTAO_A_PIN);
+    gpio_init(PINO_LED_VERDE);  //Inicia pino do led verde
+    gpio_set_dir(PINO_LED_VERDE, GPIO_OUT); // Seta pino verde como saída
+    gpio_init(PINO_LED_AZUL); // inicia pino do led azul
+    gpio_set_dir(PINO_LED_AZUL, GPIO_OUT); // Seta pino azul como saida
+ 
+    char caractere_atual = '\0';
     
-    // Configuração do Botão B
-    gpio_init(BOTAO_B_PIN);
-    gpio_set_dir(BOTAO_B_PIN, GPIO_IN);
-    gpio_pull_up(BOTAO_B_PIN);
-    
-    // Registra a callback global para o botão A e habilita a interrupção
-    gpio_set_irq_enabled_with_callback(BOTAO_A_PIN, GPIO_IRQ_EDGE_FALL, true, gpio_callback);
-    // Para o botão B, apenas habilita a interrupção (a callback já está registrada)
-    gpio_set_irq_enabled(BOTAO_B_PIN, GPIO_IRQ_EDGE_FALL, true);
-
-    // Configuração dos LEDs
-    gpio_init(LED_VERDE_PIN);
-    gpio_set_dir(LED_VERDE_PIN, GPIO_OUT);
-    gpio_init(LED_AZUL_PIN);
-    gpio_set_dir(LED_AZUL_PIN, GPIO_OUT);
-
-    char last_char = '\0';
     while (true) {
         int c = getchar_timeout_us(0);
         if (c != PICO_ERROR_TIMEOUT) {
-            last_char = (char)c;
-            flag_display_update = true;
+            caractere_atual = (char)c;
+            atualizar_display = true;
         }
 
-        if (flag_display_update) {
-            flag_display_update = false;
+        if (atualizar_display) { // para ataulizar dispaly
+            atualizar_display = false;
             ssd1306_fill(&display, false);
 
-            if ((last_char >= 'A' && last_char <= 'Z') || (last_char >= 'a' && last_char <= 'z')) {
-                ssd1306_draw_string(&display, "letra: ", 0, 0);
-            } else if (last_char >= '0' && last_char <= '9') {
-                ssd1306_draw_string(&display, "Numero: ", 0, 0);
+            if ((caractere_atual >= 'A' && caractere_atual <= 'Z') || //Caracteres maiusculos
+                (caractere_atual >= 'a' && caractere_atual <= 'z')) { //Caracteres minuscuslo
+                ssd1306_draw_string(&display, "Letra: ", 0, 0); //Desenha letras digitadas
+            } else if (caractere_atual >= '0' && caractere_atual <= '9') { //Numero para aparreze na matriz e display
+                ssd1306_draw_string(&display, "Numero: ", 0, 0); //desenha o numero digitado
             }
 
-            ssd1306_draw_char(&display, last_char, 100, 0);
-            ssd1306_draw_string(&display, "BOTAO VERDE:", 0, 20);
-            char *estadoVerdeStr = led_green_state ? "Ativo" : "Nao ativo";
-            int textWidthVerde = 6 * strlen(estadoVerdeStr);
-            int posXVerde = (128 - textWidthVerde) / 2;
-            ssd1306_draw_string(&display, estadoVerdeStr, posXVerde, 30);
+            ssd1306_draw_char(&display, caractere_atual, 100, 0); //Print caractere na matriz
 
-            ssd1306_draw_string(&display, "BOTAO AZUL:", 0, 40);
-            char *estadoAzulStr = led_blue_state ? "Ativo" : "Nao ativo";
-            int textWidthAzul = 6 * strlen(estadoAzulStr);
-            int posXAzul = (128 - textWidthAzul) / 2;
-            ssd1306_draw_string(&display, estadoAzulStr, posXAzul, 50);
+            ssd1306_draw_string(&display, "BOTAO A:", 0, 20); 
+            char *texto_verde = estado_led_verde ? "Ativo" : "Nao ativo"; //Printa estado do led verde
+            int largura_texto = 6 * strlen(texto_verde);
+            int posicao_x = (128 - largura_texto) / 2;
+            ssd1306_draw_string(&display, texto_verde, posicao_x, 30);
+
+            ssd1306_draw_string(&display, "BOTAO B:", 0, 40);
+            char *texto_azul = estado_led_azul ? "Ativo" : "Nao ativo";//Printa estado do led azul
+            largura_texto = 6 * strlen(texto_azul);
+            posicao_x = (128 - largura_texto) / 2;
+            ssd1306_draw_string(&display, texto_azul, posicao_x, 50);
+            
             ssd1306_send_data(&display);
+            //para mandar para o serial
+            printf("Caractere digitado: %c\n", caractere_atual);
+            printf("LED Verde: %s\n", estado_led_verde ? "LIGADO" : "DESLIGADO");
+            printf("LED Azul: %s\n", estado_led_azul ? "LIGADO" : "DESLIGADO");
 
-            printf("Caractere digitado: %c\n", last_char);
-            printf("LED Verde: %s\n", led_green_state ? "LIGADO" : "DESLIGADO");
-            printf("LED Azul: %s\n", led_blue_state ? "LIGADO" : "DESLIGADO");
-
-            if (last_char >= '0' && last_char <= '9') {
-                update_ws2812_matrix(last_char);
+            if (caractere_atual >= '0' && caractere_atual <= '9') {
+                atualizar_matriz_led(caractere_atual); //Atualiza matriz de led com valores entre 0 e 9
             } else {
-                desligar_matriz();
+                desligar_matriz(); //Se não colocar nenhum numero a matriz desliga
+                
             }
         }
         sleep_ms(100);
