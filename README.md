@@ -85,6 +85,7 @@ A pinagem é configurável no código-fonte, mas a configuração padrão é:
 ├── Display_Bibliotecas/ # Biblioteca para o display OLED
 │   ├── ssd1306.c
 │   └── ssd1306.h
+│   └── font.h 
 ├── matriz_led.c         # Código para controlar a matriz de LED
 ├── matriz_led.h         # Header da biblioteca da matriz de LED
 ├── numeros.c            # Padrões numéricos para a matriz de LED
