@@ -103,7 +103,7 @@ int main(void) {
 
             ssd1306_draw_char(&display, caractere_atual, 100, 0); //Print caractere na matriz
 
-            ssd1306_draw_string(&display, "BOTAO A:", 0, 20); 
+            ssd1306_draw_string(&display, "BOTAO A :", 0, 20); 
             char *texto_verde = estado_led_verde ? "Ativo" : "Nao ativo"; //Printa estado do led verde
             int largura_texto = 6 * strlen(texto_verde);
             int posicao_x = (128 - largura_texto) / 2;
